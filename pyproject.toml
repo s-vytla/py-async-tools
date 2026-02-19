@@ -1,0 +1,41 @@
+# Tool configuration only - never contains [project] metadata
+# This file is skipped if it already exists in the target repository
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+# Ruff configuration is in ruff.toml for better separation
+# This section exists only to reference the external config
+
+[tool.mypy]
+# Mypy configuration is in mypy.ini for better separation
+# This section exists only to reference the external config
+
+[tool.pytest.ini_options]
+# Pytest configuration is in pytest.ini for better separation
+# This section exists only to reference the external config
+
+[tool.coverage.run]
+# Coverage.py configuration
+source = ["."]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+    "*/dist-packages/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "@abc.abstractmethod",
+]
