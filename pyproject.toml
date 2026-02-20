@@ -26,6 +26,7 @@ omit = [
     "*/__pycache__/*",
     "*/site-packages/*",
     "*/dist-packages/*",
+    "example_*.py",
 ]
 
 [tool.coverage.report]
