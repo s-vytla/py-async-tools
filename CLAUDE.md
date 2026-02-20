@@ -50,3 +50,93 @@ pytest -m integration  # Run integration tests only
 pytest -m slow         # Run slow tests
 pytest -m smoke        # Run smoke tests
 ```
+
+## Architecture
+
+### Module Organization
+
+The library is organized into subdirectories by functionality:
+
+```
+src/async_tools/
+├── __init__.py              # Public API exports
+├── retry.py                 # Retry decorator utility
+└── rate_limit/             # Rate limiting utilities (subdirectory)
+    ├── __init__.py          # Rate limit exports
+    ├── base.py              # Base classes and protocols
+    ├── token_bucket.py      # Token bucket implementation
+    ├── semaphore_limiter.py # Semaphore wrapper
+    └── per_key.py           # Per-key limiter with cleanup
+```
+
+### Rate Limiter Design Pattern
+
+All rate limiters follow a unified architecture:
+
+1. **Base Class Pattern**: `RateLimiterBase` (in `base.py`) provides decorator and context manager patterns. Subclasses only implement:
+   - `acquire()` - Core rate limiting logic (required)
+   - `release()` - Resource cleanup (optional, defaults to no-op)
+
+2. **Three Usage Patterns** (all limiters support):
+   ```python
+   # Context manager (canonical)
+   async with limiter:
+       await operation()
+
+   # Decorator
+   @limiter
+   async def my_function():
+       await operation()
+
+   # Direct acquire/release
+   await limiter.acquire()
+   try:
+       await operation()
+   finally:
+       await limiter.release()
+   ```
+
+3. **Protocol-Based**: `AsyncRateLimiter` protocol defines the interface for structural typing and duck typing.
+
+### Rate Limiter Types
+
+- **TokenBucketRateLimiter**: Rate-based limiting (e.g., 10 ops/sec with burst capacity). Uses `asyncio.Lock` for concurrency safety and monotonic time from event loop.
+
+- **SemaphoreRateLimiter**: Concurrency limiting (e.g., max 5 concurrent ops). Thin wrapper around `asyncio.Semaphore`. Unlike token bucket, requires explicit `release()`.
+
+- **PerKeyRateLimiter**: Generic wrapper that creates independent limiter instances per key (e.g., per-user limits). Features:
+  - Factory pattern - accepts any limiter type
+  - Automatic cleanup of idle limiters via background task
+  - Decorator with key extraction: `@limiter.decorator(key_func=lambda user_id: user_id)`
+  - Must call `await limiter.close()` or use as async context manager
+
+### Testing Patterns
+
+Tests use mocking for deterministic timing:
+- Mock `asyncio.sleep` to control sleep behavior
+- Mock `asyncio.get_event_loop().time()` to control time progression
+- Use `pytest.mark.asyncio` for async tests
+- Use `pytest.mark.unit` for test categorization
+
+Example from tests:
+```python
+async def mock_sleep(duration):
+    nonlocal current_time
+    current_time += duration
+
+with patch("asyncio.sleep", side_effect=mock_sleep):
+    # Test rate limiting behavior deterministically
+```
+
+### Type Safety
+
+- Full type hints with strict mypy checking
+- Generic types for `PerKeyRateLimiter[KeyType, LimiterType]`
+- Test files may use `# mypy: disable-error-code="var-annotated"` to silence verbose test variable annotations
+
+### Async Considerations
+
+- Always use `asyncio.Lock` not `threading.Lock` for async concurrency
+- Use `asyncio.get_event_loop().time()` for monotonic time
+- Background tasks should be cancellable and handle `asyncio.CancelledError`
+- Context managers should be exception-safe (resources released even on error)
