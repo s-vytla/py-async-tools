@@ -30,11 +30,17 @@ Run tests matching a pattern:
 pytest -k "test_name_pattern" -v
 ```
 
+Run only integration or unit tests:
+```bash
+./run.sh test tests/integration/  # Integration tests only
+./run.sh test tests/unit/         # Unit tests only
+```
+
 ## Project Structure
 
 - `src/async_tools/` - Main package source code
-- `tests/unit/` - Unit tests (fast, isolated)
-- `tests/integration/` - Integration tests (may require external resources)
+- `tests/unit/` - Unit tests (fast, isolated, mocked timing)
+- `tests/integration/` - Integration tests (real async timing, simulated failures)
 
 ## Code Quality
 
@@ -134,13 +140,13 @@ All resilience utilities (rate limiters and circuit breaker) follow a unified ar
 
 ### Testing Patterns
 
-Tests use mocking for deterministic timing:
+**Unit Tests** (`tests/unit/`) use mocking for deterministic timing:
 - Mock `asyncio.sleep` to control sleep behavior
 - Mock `asyncio.get_event_loop().time()` to control time progression
 - Use `pytest.mark.asyncio` for async tests
 - Use `pytest.mark.unit` for test categorization
 
-Example from tests:
+Example from unit tests:
 ```python
 async def mock_sleep(duration):
     nonlocal current_time
@@ -149,6 +155,18 @@ async def mock_sleep(duration):
 with patch("asyncio.sleep", side_effect=mock_sleep):
     # Test rate limiting behavior deterministically
 ```
+
+**Integration Tests** (`tests/integration/`) use real async timing:
+- No mocking of `asyncio.sleep` or time - validates real-world behavior
+- Simulates network failures (ConnectionError, TimeoutError)
+- Tests actual concurrency with `asyncio.gather()`
+- Use `pytest.mark.integration` for test categorization
+- Use `pytest.mark.slow` for tests taking > 1 second
+- Organized into four categories:
+  - `test_retry_scenarios.py` - Retry with flaky operations
+  - `test_circuit_breaker_scenarios.py` - Circuit breaker state transitions
+  - `test_rate_limit_scenarios.py` - Rate limiting under load
+  - `test_combined_resilience.py` - Multiple utilities working together
 
 ### Type Safety
 
