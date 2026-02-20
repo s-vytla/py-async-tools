@@ -102,9 +102,7 @@ class TestPerKeyRateLimiter:
         )
 
         try:
-            with patch.object(
-                asyncio.get_event_loop(), "time", side_effect=mock_time
-            ):
+            with patch.object(asyncio.get_event_loop(), "time", side_effect=mock_time):
                 # Use limiter for user1
                 async with limiter.for_key("user1"):
                     pass
@@ -137,9 +135,7 @@ class TestPerKeyRateLimiter:
         )
 
         try:
-            with patch.object(
-                asyncio.get_event_loop(), "time", side_effect=mock_time
-            ):
+            with patch.object(asyncio.get_event_loop(), "time", side_effect=mock_time):
                 # Use limiter for user1 at time 0
                 async with limiter.for_key("user1"):
                     pass
@@ -249,9 +245,12 @@ class TestPerKeyRateLimiter:
 
     async def test_context_manager_close(self):
         """Test using limiter as async context manager."""
-        async with PerKeyRateLimiter(
-            limiter_factory=lambda: TokenBucketRateLimiter(rate=10.0)
-        ) as limiter, limiter.for_key("user1"):
+        async with (
+            PerKeyRateLimiter(
+                limiter_factory=lambda: TokenBucketRateLimiter(rate=10.0)
+            ) as limiter,
+            limiter.for_key("user1"),
+        ):
             pass
 
         # Cleanup task should be cancelled after exit
@@ -380,9 +379,7 @@ class TestPerKeyRateLimiter:
         )
 
         try:
-            with patch.object(
-                asyncio.get_event_loop(), "time", side_effect=mock_time
-            ):
+            with patch.object(asyncio.get_event_loop(), "time", side_effect=mock_time):
                 # Use limiter for user1
                 async with limiter.for_key("user1"):
                     pass
@@ -464,9 +461,7 @@ class TestPerKeyRateLimiter:
         )
 
         try:
-            with patch.object(
-                asyncio.get_event_loop(), "time", side_effect=mock_time
-            ):
+            with patch.object(asyncio.get_event_loop(), "time", side_effect=mock_time):
                 # Create many keys
                 for i in range(100):
                     async with limiter.for_key(f"user{i}"):

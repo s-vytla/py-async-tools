@@ -11,7 +11,7 @@ from async_tools.rate_limit import (
 )
 
 
-async def example_token_bucket()->None:
+async def example_token_bucket() -> None:
     """Example: API rate limiting with token bucket."""
     print("\n=== Token Bucket Example ===")
     print("Rate limiting API calls to 5 per second with burst of 10")
@@ -20,7 +20,7 @@ async def example_token_bucket()->None:
     limiter = TokenBucketRateLimiter(rate=5.0, capacity=10.0)
 
     @limiter
-    async def api_call(request_id: int)->None:
+    async def api_call(request_id: int) -> None:
         print(f"  API call {request_id} executing")
         # Simulate API work
         await asyncio.sleep(0.01)
@@ -35,7 +35,7 @@ async def example_token_bucket()->None:
     print(f"Effective rate: {20 / elapsed:.1f} calls/second")
 
 
-async def example_semaphore()->None:
+async def example_semaphore() -> None:
     """Example: Database connection pooling with semaphore."""
     print("\n=== Semaphore Example ===")
     print("Limiting concurrent database connections to 3")
@@ -47,7 +47,7 @@ async def example_semaphore()->None:
     max_concurrent_seen = 0
 
     @limiter
-    async def database_query(query_id: int)->None:
+    async def database_query(query_id: int) -> None:
         nonlocal active_connections, max_concurrent_seen
         active_connections += 1
         max_concurrent_seen = max(max_concurrent_seen, active_connections)
@@ -68,7 +68,7 @@ async def example_semaphore()->None:
     print(f"Max concurrent connections: {max_concurrent_seen}")
 
 
-async def example_per_key()->None:
+async def example_per_key() -> None:
     """Example: Per-user rate limiting."""
     print("\n=== Per-Key Example ===")
     print("Rate limiting per user (10 requests/sec per user)")

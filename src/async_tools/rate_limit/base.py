@@ -27,9 +27,7 @@ class AsyncRateLimiter(Protocol):
         """Enter the async context manager."""
         ...
 
-    async def __aexit__(
-        self, exc_type: Any, exc_val: Any, exc_tb: Any
-    ) -> None:
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Exit the async context manager."""
         ...
 
@@ -72,9 +70,7 @@ class RateLimiterBase(ABC):
         """Enter the async context manager by acquiring permission."""
         await self.acquire()
 
-    async def __aexit__(
-        self, exc_type: Any, exc_val: Any, exc_tb: Any
-    ) -> None:
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Exit the async context manager by releasing resources."""
         await self.release()
 
@@ -95,4 +91,4 @@ class RateLimiterBase(ABC):
             async with self:
                 return await func(*args, **kwargs)
 
-        return cast(F, wrapper)
+        return cast("F", wrapper)

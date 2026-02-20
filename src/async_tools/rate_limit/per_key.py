@@ -28,9 +28,7 @@ class PerKeyLimiterContext(Generic[LimiterType]):
         """Enter the async context manager by acquiring the key's limiter."""
         await self._limiter.acquire()
 
-    async def __aexit__(
-        self, exc_type: Any, exc_val: Any, exc_tb: Any
-    ) -> None:
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Exit the async context manager by releasing the key's limiter."""
         # Release if the limiter has a release method
         if hasattr(self._limiter, "__aexit__"):
@@ -121,9 +119,7 @@ class PerKeyRateLimiter(Generic[KeyType, LimiterType]):
                 self._limiter = await self._parent._get_or_create_limiter(self._key)
                 await self._limiter.acquire()
 
-            async def __aexit__(
-                self, exc_type: Any, exc_val: Any, exc_tb: Any
-            ) -> None:
+            async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
                 if self._limiter is not None:
                     # Update last used time
                     async with self._parent._lock:
@@ -162,7 +158,7 @@ class PerKeyRateLimiter(Generic[KeyType, LimiterType]):
                 async with self.for_key(key):
                     return await func(*args, **kwargs)
 
-            return cast(F, wrapper)
+            return cast("F", wrapper)
 
         return decorator_wrapper
 
@@ -245,8 +241,6 @@ class PerKeyRateLimiter(Generic[KeyType, LimiterType]):
         """Enter async context manager."""
         return self
 
-    async def __aexit__(
-        self, exc_type: Any, exc_val: Any, exc_tb: Any
-    ) -> None:
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Exit async context manager and clean up."""
         await self.close()

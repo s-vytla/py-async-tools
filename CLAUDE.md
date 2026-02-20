@@ -61,7 +61,10 @@ The library is organized into subdirectories by functionality:
 src/async_tools/
 ├── __init__.py              # Public API exports
 ├── retry.py                 # Retry decorator utility
-└── rate_limit/             # Rate limiting utilities (subdirectory)
+├── circuit_breaker/         # Circuit breaker pattern (subdirectory)
+│   ├── __init__.py          # Circuit breaker exports
+│   └── circuit_breaker.py   # Circuit breaker implementation
+└── rate_limit/              # Rate limiting utilities (subdirectory)
     ├── __init__.py          # Rate limit exports
     ├── base.py              # Base classes and protocols
     ├── token_bucket.py      # Token bucket implementation
@@ -69,9 +72,9 @@ src/async_tools/
     └── per_key.py           # Per-key limiter with cleanup
 ```
 
-### Rate Limiter Design Pattern
+### Resilience Utilities Design Pattern
 
-All rate limiters follow a unified architecture:
+All resilience utilities (rate limiters and circuit breaker) follow a unified architecture:
 
 1. **Base Class Pattern**: `RateLimiterBase` (in `base.py`) provides decorator and context manager patterns. Subclasses only implement:
    - `acquire()` - Core rate limiting logic (required)
@@ -110,6 +113,25 @@ All rate limiters follow a unified architecture:
   - Decorator with key extraction: `@limiter.decorator(key_func=lambda user_id: user_id)`
   - Must call `await limiter.close()` or use as async context manager
 
+### Circuit Breaker
+
+- **CircuitBreaker**: Prevents cascading failures by detecting repeated failures and temporarily blocking operations. Implements a state machine:
+  - **CLOSED**: Normal operation, requests pass through. Failures are counted.
+  - **OPEN**: Too many failures occurred. All requests blocked immediately with `CircuitBreakerOpenError`.
+  - **HALF_OPEN**: Testing recovery after timeout. Limited requests allowed through.
+
+  State transitions:
+  - CLOSED → OPEN: When `failure_count >= failure_threshold`
+  - OPEN → HALF_OPEN: After `timeout` seconds
+  - HALF_OPEN → CLOSED: On first success
+  - HALF_OPEN → OPEN: On any failure
+
+  Key implementation details:
+  - Inherits from `RateLimiterBase` to reuse decorator/context manager patterns
+  - Overrides `__aexit__()` to track success/failure based on exceptions
+  - Uses `record_success()` and `record_failure()` for manual tracking
+  - State transitions are atomic using `asyncio.Lock`
+
 ### Testing Patterns
 
 Tests use mocking for deterministic timing:
@@ -133,6 +155,7 @@ with patch("asyncio.sleep", side_effect=mock_sleep):
 - Full type hints with strict mypy checking
 - Generic types for `PerKeyRateLimiter[KeyType, LimiterType]`
 - Test files may use `# mypy: disable-error-code="var-annotated"` to silence verbose test variable annotations
+- For tests with dynamic state changes, use `# mypy: disable-error-code="comparison-overlap,unreachable"` to silence literal type narrowing issues
 
 ### Async Considerations
 
