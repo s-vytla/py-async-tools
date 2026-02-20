@@ -4,6 +4,11 @@ set -e
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+# Activate virtual environment if it exists
+if [ -d "$THIS_DIR/.venv" ]; then
+    source "$THIS_DIR/.venv/bin/activate"
+fi
+
 function install {
     echo "Installing production dependencies..."
     pip install -e .
